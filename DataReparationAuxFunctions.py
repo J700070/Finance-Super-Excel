@@ -707,7 +707,7 @@ def calculateGrowthMetrics(df, columns):
         df[column+" CAGR since start"] = (df[column].iloc[-1] / df[column].iloc[0]) ** (1/years_since_start) - 1
 
 
-def FundamentalCalculator(df): 
+def fundamentalCalculator(df): 
     fundamental_data = df.T.copy()
    
 
@@ -846,8 +846,5 @@ def FundamentalCalculator(df):
 
     return fundamental_data.T
 
-# check the first cell which is empty
-def calculate_dump_letter(dump_page):
-    for i in range(1, 100):
-        if dump_page.range(1,i).value == None:
-            return i
+
+

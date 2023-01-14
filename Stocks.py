@@ -2,29 +2,53 @@ import xlwings as xw
 import pandas as pd
 import matplotlib.pyplot as plt
 from DataReparationAuxFunctions import *
+from DataManipulation import *
 import xlsxwriter 
 
 def main():
+    # Get a reference to the caller workbook
     wb = xw.Book.caller()
+
+    # Create references to specific sheets in the workbook
     financials_sheet = wb.sheets["Financials"]
     processed_page = wb.sheets["Processed"]
+    processedQ_page = wb.sheets["ProcessedQ"]
     dump_page = wb.sheets["Dump"]
+    dumpQ_page = wb.sheets["DumpQ"]
+    options_page = wb.sheets["Options"]
+
+
+    # Extract the ticker symbol from the "Dump" sheet and add it to the "Financials" sheet
     ticker = dump_page["A1"].value.replace("https://roic.ai/company/", "")
     financials_sheet["D2"].value = ticker
-    options_page = wb.sheets["Options"]
-    dump_number = calculate_dump_letter(dump_page)
-    dump_letter = xlsxwriter.utility.xl_col_to_name(dump_number-2)
-    raw_df = pd.DataFrame(dump_page["A1:"+dump_letter+"104"].value)
-    raw_df.columns = raw_df.iloc[0]
-    raw_df = raw_df.drop(0)
-    raw_df.set_index(raw_df.columns[0], drop=True, inplace=True)
-    cleaned_df = clean_and_reconstruct_fundamentals(raw_df, reconstruct_df=True)
-    market_cap = int(options_page["B3"].value) * 1000000000
-    df = FundamentalCalculator(cleaned_df)
+
+    # We want to get all the information from the "Dump" sheet, so we need to know the last column
+    # We can get this by counting the number of columns in the first row and then converting it to a letter
+    max_length_letter_dump = getLastColumnLetter(dump_page)
+    max_length_letter_dumpQ = getLastColumnLetter(dumpQ_page)
+
+    
+
+    # Process the "Dump" sheet
+    df = process_sheet(dump_page, max_length_letter_dump)
+    dfQ = process_sheet(dumpQ_page, max_length_letter_dumpQ)
+    
+    # Save the result to the "Processed" and "ProcessedQ" sheets
     processed_page["A1"].value = df
+    processedQ_page["A1"].value = dfQ
+    
+
+    # Get divisor from options sheet
     divisor = int(options_page["B1"].value)
-    clean_pages(financials_sheet, processed_page, dump_page)
-    print_financials(df, divisor, financials_sheet, market_cap)
+
+    # Clean up the pages 
+    # clean_pages(financials_sheet, processed_page, dump_page)
+
+    # Get market cap from options sheet
+    market_cap = int(options_page["B3"].value) * 1e9
+
+    # Print financials
+    write_financials(df, divisor, financials_sheet, market_cap)
     
 
 
@@ -34,13 +58,9 @@ def main():
 
 
 
-if __name__ == '__main__':
-    xw.Book("Test.xlsm").set_mock_caller()
-    main()
 
 
-
-def print_financials(df, divisor, financials_sheet, market_cap):
+def write_financials(df, divisor, financials_sheet, market_cap):
     
     # Basic Data
     aux_df = df.copy().T
@@ -134,8 +154,15 @@ def clear_dump():
     dump_page = wb.sheets["Dump"]
     dump_page.clear_contents()
 
+    dump_page = wb.sheets["DumpQ"]
+    dump_page.clear_contents()
+
     processed_page = wb.sheets["Processed"]
     processed_page.clear_contents()
+
+    processed_page = wb.sheets["ProcessedQ"]
+    processed_page.clear_contents()
+
 
 def clean_pages(financials_sheet, processed_page, dump_page):
     
@@ -152,14 +179,9 @@ def clean_pages(financials_sheet, processed_page, dump_page):
     financials_sheet["K60"].value = "EBITDA / Net Debt"
 
 
-    
-# @xw.sub()
-# def save_file():
-#     wb_from = xw.Book.caller()
-#     wb_to = xw.Book(f"{ticker}.xlsx")
 
-#     wb_from.sheets['Financials'].copy()
-#     wb_to.sheets['Financials'].copy(after=wb_to.sheets[0])
 
- 
-#     wb_to.save()
+
+if __name__ == '__main__':
+    xw.Book("Test.xlsm").set_mock_caller()
+    main()
