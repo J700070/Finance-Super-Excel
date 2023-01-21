@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from DataReparationAuxFunctions import *
 from DataManipulation import *
+from pairwise_comparison import *
 import xlsxwriter
 
 
@@ -148,7 +149,7 @@ def write_financials(df, dfQ, divisor, financials_sheet, market_cap):
     financials_sheet["D77"].value = chart_df.T.iloc[:, -10:]
 
 
-@xw.sub()
+@xw.func
 def clear_dump():
     wb = xw.Book.caller()
 
@@ -163,6 +164,25 @@ def clear_dump():
 
     processed_page = wb.sheets["ProcessedQ"]
     processed_page.clear_contents()
+
+
+@xw.func
+def generate_comparison_matrix():
+    wb = xw.Book.caller()
+
+    comparison_page = wb.sheets["Comparison"]
+    options_page = wb.sheets["Options"]
+
+    # Get list of stocks to compare from options page
+    # These values are all cells below A19 until the first empty cell
+    stocks_to_compare = options_page["A19"].expand("down").value
+
+    # Make pandas dataframe from list of stocks
+    # Both columns and rows are "stocks_to_compare"
+    comparison_matrix = pd.DataFrame(index=stocks_to_compare, columns=stocks_to_compare)
+
+    # Write dataframe to excel
+    comparison_page["A1"].value = comparison_matrix
 
 
 def clean_pages(
@@ -185,5 +205,5 @@ def clean_pages(
 
 
 if __name__ == "__main__":
-    xw.Book("Test.xlsm").set_mock_caller()
+    xw.Book("Stocks.xlsm").set_mock_caller()
     main()
