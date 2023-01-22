@@ -15,9 +15,7 @@ def main():
     balance_sheet_sheet = wb.sheets["BalanceSheet"]
     cash_flow_sheet = wb.sheets["CashFlow"]
     ratios_sheet = wb.sheets["Ratios"]
-    processed_sheet = wb.sheets["Processed"]
-    processedQ_sheet = wb.sheets["ProcessedQ"]
-    print("Main function called")
+
     # Replace all comas with periods and vice versa in [income_statement_sheet, balance_sheet_sheet, cash_flow_sheet, ratios_sheet]
     pages = [income_statement_sheet, balance_sheet_sheet, cash_flow_sheet, ratios_sheet]
     for page in pages:
@@ -39,8 +37,6 @@ def main():
         )
         # Write the dataframe back to the sheet
         page.range("B4:CZ93").value = df.values
-
-    print("Replaced commas with periods")
 
 
 @xw.sub
